@@ -204,26 +204,6 @@
             transform: translateX(24px);
         }
 
-        /* Info Icon */
-        .info-icon {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            background: #3b82f6;
-            color: white;
-            border-radius: 50%;
-            font-size: 11px;
-            font-weight: bold;
-            text-align: center;
-            line-height: 18px;
-            cursor: pointer;
-            margin-left: 6px;
-            vertical-align: middle;
-        }
-
-        .info-icon:hover {
-            background: #2563eb;
-        }
 
         /* Modal */
         .modal {
@@ -318,7 +298,10 @@
 
         /* Hide sections */
         .breakdown-card {
-            display: none;
+            display: block;
+            width: 60%;
+            flex-shrink: 0;
+            overflow-x: hidden;
         }
 
         .standards-table {
@@ -328,9 +311,10 @@
         /* Main Layout */
         .main-layout {
             display: flex;
-            flex-direction: column;
-            gap: 20px;
+            flex-direction: row;
+            gap: 2%;
             margin-bottom: 20px;
+            align-items: stretch;
         }
 
         .card {
@@ -351,21 +335,18 @@
 
         /* Radar Chart Card */
         .chart-card {
-            width: 100%;
+            width: 40%;
+            flex-shrink: 0;
         }
 
         .chart-container {
             position: relative;
-            height: 400px;
+            height: 500px;
             display: flex;
             justify-content: center;
         }
 
         /* Dimension Breakdown Card */
-        .breakdown-card {
-            width: 100%;
-        }
-
         #breakdownDisplay {
             width: 100%;
         }
@@ -657,7 +638,6 @@
 
         <div class="main-layout">
             <div class="card chart-card">
-                <div class="card-title">雷達圖分析</div>
                 <div class="chart-container">
                     <canvas id="radarChart"></canvas>
                 </div>
@@ -691,12 +671,12 @@
         // ============ Data Configuration ============
         const dimensions = {
             labels: [
-                '🔵2030年溫室氣體\n絕對減量目標',
-                '🔵2030年再生\n能源使用率目標',
-                '🔵2030年能源\n效率進步目標',
-                '🟢2024年再生\n能源使用率',
-                '🟢2022-2024年\n能源效率進步率',
-                '🟠範疇三及\n減量策略'
+                '2030年溫室氣體絕對減量目標',
+                '2030年再生能源使用率目標',
+                '2030年能源效率進步目標',
+                '2024年再生能源使用率',
+                '2022-2024年能源效率進步率',
+                '範疇三及減量策略'
             ],
             keys: [
                 '2030年溫室氣體絕對減量目標',
@@ -948,17 +928,21 @@
                 {
                     label: company['公司'],
                     data: scores,
-                    borderColor: dimensions.colors.borders,
-                    backgroundColor: dimensions.colors.backgrounds,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
                     borderWidth: 2.5,
-                    pointRadius: 5,
-                    pointBackgroundColor: dimensions.colors.borders,
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointHoverRadius: 7,
+                    pointRadius: 2,
+                    pointBackgroundColor: 'rgba(239, 68, 68, 0.3)',
+                    pointBorderColor: 'rgba(239, 68, 68, 0.5)',
+                    pointBorderWidth: 1,
+                    pointHoverRadius: 8,
+                    pointHoverBackgroundColor: '#ef4444',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2,
                     tension: 0,
                     spanGaps: true,
-                    tension: 0
+                    tension: 0,
+                    hitRadius: 20
                 }
             ];
 
@@ -971,11 +955,8 @@
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     borderDash: [5, 5],
-                    pointRadius: 3,
-                    pointBackgroundColor: '#999',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointHoverRadius: 5,
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
                     tension: 0,
                     spanGaps: true
                 });
@@ -995,7 +976,8 @@
                     maintainAspectRatio: false,
                     interaction: {
                         mode: 'nearest',
-                        intersect: false
+                        intersect: false,
+                        axis: 'r'
                     },
                     plugins: {
                         legend: {
@@ -1009,8 +991,8 @@
                             }
                         },
                         tooltip: {
-                            enabled: true,
-                            mode: 'index',
+                            enabled: false,
+                            mode: 'nearest',
                             intersect: false,
                             backgroundColor: 'rgba(0, 0, 0, 0.95)',
                             padding: 14,
@@ -1028,9 +1010,9 @@
                                     return '';
                                 },
                                 label: function(context) {
-                                    const label = context.dataset.label || '';
-                                    const value = context.parsed.r;
-                                    return `${label}: ${value}`;
+                                    // Show the score
+                                    const score = context.parsed.r;
+                                    return `分數: ${score}`;
                                 },
                                 afterLabel: function(context) {
                                     // Show company data for the hovered dimension
@@ -1038,12 +1020,22 @@
                                     const dimensionKey = dimensions.keys[labelIndex];
                                     const standard = gradeStandards[dimensionKey];
                                     const sourceFields = standard.sourceFields || [];
+                                    const score = context.parsed.r;
 
-                                    let dataLines = ['\n相關數據:'];
+                                    let dataLines = [];
+
+                                    // Add score description
+                                    if (standard.scores[score]) {
+                                        dataLines.push(`\n評分說明: ${standard.scores[score]}`);
+                                    }
+
+                                    dataLines.push('\n相關數據:');
                                     sourceFields.forEach(field => {
                                         const value = company[field];
                                         if (value && value !== '' && value !== 'False') {
-                                            dataLines.push(`${field}: ${value}`);
+                                            dataLines.push(`  ${field}: ${value}`);
+                                        } else {
+                                            dataLines.push(`  ${field}: 無資料`);
                                         }
                                     });
                                     return dataLines.join('\n');
@@ -1057,12 +1049,7 @@
                             max: 3,
                             ticks: {
                                 stepSize: 1,
-                                font: { size: 11, weight: '500' },
-                                color: '#888',
-                                callback: function(value) {
-                                    // Only show labels for 0, 1, 2, 3 (hide -0.5)
-                                    return value >= 0 ? value : '';
-                                }
+                                display: false
                             },
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.05)',
@@ -1082,11 +1069,8 @@
                 }
             });
 
-            // Add info icons to dimension labels after chart is rendered
-            setTimeout(() => {
-                addInfoIconsToChart();
-                addCustomTooltip();
-            }, 100);
+            // Enable custom tooltip for better hover experience
+            addCustomTooltip();
         }
 
         function addCustomTooltip() {
@@ -1120,50 +1104,61 @@
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
 
-                // Calculate distance from center
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                const dx = x - centerX;
-                const dy = y - centerY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const angle = Math.atan2(dy, dx);
-
-                // Check if hovering near any dimension axis
+                // Get the actual data points from the chart
                 let hoveredDimension = -1;
-                const tolerance = 50;
+                let minDistance = Infinity;
+                const hoverRadius = 40; // Detection radius in pixels
 
-                dimensions.keys.forEach((key, idx) => {
-                    const dimAngle = (idx / dimensions.keys.length) * Math.PI * 2 - Math.PI / 2;
-                    const angleDiff = Math.abs(angle - dimAngle);
+                // Get meta data for the first dataset (company data)
+                const meta = chart.getDatasetMeta(0);
 
-                    // Normalize angle difference to 0-PI
-                    const normalizedDiff = angleDiff > Math.PI ? 2 * Math.PI - angleDiff : angleDiff;
+                if (meta && meta.data) {
+                    meta.data.forEach((point, idx) => {
+                        const pointX = point.x;
+                        const pointY = point.y;
 
-                    // Check if close to this dimension's angle
-                    if (normalizedDiff < 0.5 && distance > 50 && distance < rect.width / 2) {
-                        hoveredDimension = idx;
-                    }
-                });
+                        // Calculate distance from mouse to this data point
+                        const dx = x - pointX;
+                        const dy = y - pointY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        // If within hover radius and closest so far
+                        if (distance < hoverRadius && distance < minDistance) {
+                            minDistance = distance;
+                            hoveredDimension = idx;
+                        }
+                    });
+                }
 
                 if (hoveredDimension >= 0) {
                     const dimensionKey = dimensions.keys[hoveredDimension];
                     const standard = gradeStandards[dimensionKey];
                     const sourceFields = standard.sourceFields || [];
+                    const score = selectedCompanyIndex !== null ? chart.data.datasets[0].data[hoveredDimension] : null;
 
                     let content = `${dimensions.labels[hoveredDimension]}\n`;
-                    content += `分數: ${selectedCompanyIndex !== null ? chart.data.datasets[0].data[hoveredDimension] : '-'}\n\n相關數據:\n`;
+                    content += `分數: ${score !== null ? score : '-'}\n`;
+
+                    // Add score description
+                    if (score !== null && standard.scores && standard.scores[score]) {
+                        content += `評分說明: ${standard.scores[score]}\n`;
+                    }
+
+                    content += `\n相關數據:\n`;
 
                     sourceFields.forEach(field => {
                         const value = selectedCompanyIndex !== null ? csvData[selectedCompanyIndex][field] : '';
                         if (value && value !== '' && value !== 'False') {
-                            content += `${field}: ${value}\n`;
+                            content += `  ${field}: ${value}\n`;
+                        } else {
+                            content += `  ${field}: 無資料\n`;
                         }
                     });
 
                     tooltip.textContent = content;
                     tooltip.style.display = 'block';
-                    tooltip.style.left = (e.clientX - rect.left + 10) + 'px';
-                    tooltip.style.top = (e.clientY - rect.top + 10) + 'px';
+                    tooltip.style.left = (e.clientX - rect.left) + 'px';
+                    tooltip.style.top = (e.clientY - rect.top) + 'px';
                 } else {
                     tooltip.style.display = 'none';
                 }
@@ -1174,157 +1169,50 @@
             });
         }
 
-        function addInfoIconsToChart() {
-            // Find all point labels in the chart canvas and add click handlers
-            const canvas = document.getElementById('radarChart');
-            const chartInstance = Chart.instances[0];
-
-            if (!chartInstance) return;
-
-            canvas.addEventListener('click', function(event) {
-                const points = chartInstance.getElementsAtEventForMode(
-                    event,
-                    'nearest',
-                    { intersect: true },
-                    true
-                );
-
-                // For radar charts, we need to find nearby labels
-                const rect = canvas.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-
-                // Check if clicked on a label area
-                dimensions.keys.forEach((key, idx) => {
-                    const label = dimensions.labels[idx];
-                    // This is a simplified approach; in a real scenario,
-                    // you'd calculate the exact label position
-                });
-            });
-
-            // Add info icon indicators to the label area using CSS or overlay
-            addLabelOverlay();
-        }
-
-        function addLabelOverlay() {
-            const canvas = document.getElementById('radarChart');
-            const container = document.querySelector('.chart-container');
-            let overlay = container.querySelector('.label-overlay');
-
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.className = 'label-overlay';
-                overlay.style.position = 'absolute';
-                overlay.style.top = '0';
-                overlay.style.left = '0';
-                overlay.style.width = '100%';
-                overlay.style.height = '100%';
-                overlay.style.pointerEvents = 'none';
-                container.style.position = 'relative';
-                container.appendChild(overlay);
-            }
-
-            // Clear previous icons
-            overlay.innerHTML = '';
-
-            // Get canvas dimensions
-            const canvasWidth = canvas.offsetWidth;
-            const canvasHeight = canvas.offsetHeight;
-            const centerX = canvasWidth / 2;
-            const centerY = canvasHeight / 2;
-
-            // Create info icons for each dimension
-            dimensions.keys.forEach((key, idx) => {
-                const icon = document.createElement('span');
-                icon.className = 'info-icon-trigger';
-                icon.setAttribute('data-dimension', key);
-                icon.textContent = 'i';
-                icon.title = `點擊查看 ${dimensions.labels[idx]} 的評分標準`;
-
-                icon.style.position = 'absolute';
-                icon.style.pointerEvents = 'auto';
-                icon.style.cursor = 'pointer';
-                icon.style.display = 'inline-block';
-                icon.style.width = '18px';
-                icon.style.height = '18px';
-                icon.style.lineHeight = '18px';
-                icon.style.backgroundColor = '#3b82f6';
-                icon.style.color = 'white';
-                icon.style.borderRadius = '50%';
-                icon.style.textAlign = 'center';
-                icon.style.fontSize = '11px';
-                icon.style.fontWeight = 'bold';
-                icon.style.userSelect = 'none';
-                icon.style.transition = 'all 0.2s';
-
-                // Calculate position around the chart (close to radar label positions)
-                const angle = (idx / dimensions.keys.length) * Math.PI * 2 - Math.PI / 2;
-                const distance = Math.min(canvasWidth, canvasHeight) * 0.47; // Distance from center, closer to labels
-                const x = centerX + Math.cos(angle) * distance;
-                const y = centerY + Math.sin(angle) * distance;
-
-                // Adjust offset based on angle to position icon after the label text
-                const offsetX = Math.cos(angle) * 20; // Additional offset to place after label
-                const offsetY = Math.sin(angle) * 20;
-
-                icon.style.left = (x + offsetX - 9) + 'px';
-                icon.style.top = (y + offsetY - 9) + 'px';
-
-                icon.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    openStandardsModal(this.getAttribute('data-dimension'));
-                });
-
-                icon.addEventListener('mouseenter', function() {
-                    this.style.backgroundColor = '#2563eb';
-                    this.style.transform = 'scale(1.2)';
-                });
-
-                icon.addEventListener('mouseleave', function() {
-                    this.style.backgroundColor = '#3b82f6';
-                    this.style.transform = 'scale(1)';
-                });
-
-                overlay.appendChild(icon);
-            });
-        }
 
         // ============ Breakdown Display ============
         function displayBreakdown(company, scores) {
             const display = document.getElementById('breakdownDisplay');
-            let html = `<div class="company-info">
-                <div class="company-name">${company['公司']}</div>
-                <div class="company-industry">${company['產業類別']}</div>
+            let html = `<div class="standards-info">
+                <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #1a1a1a; text-align: left;">評分標準</h3>
             </div>`;
 
-            html += `<table class="breakdown-table">
+            html += `<table class="breakdown-table" style="table-layout: auto; width: 100%;">
                 <thead>
                     <tr>
-                        <th style="width: 35%;">維度</th>
-                        <th style="width: 8%;">評分</th>
-                        <th style="width: 57%;">相關數據</th>
+                        <th style="width: auto; text-align: left; white-space: nowrap; font-size: 11px; padding: 6px 8px 6px 0;">類型</th>
+                        <th style="width: auto; text-align: left; white-space: nowrap; font-size: 11px; padding: 6px 8px 6px 0;">維度</th>
+                        <th style="width: 100%; text-align: left; font-size: 11px; padding: 6px 0;">評分說明</th>
                     </tr>
                 </thead>
                 <tbody>`;
 
-            dimensions.keys.forEach((key, index) => {
+            dimensions.keys.forEach((key) => {
                 const standard = gradeStandards[key];
-                const score = scores[index];
-                const dataFields = standard.sourceFields;
+                const categoryLabel = standard.category === 'goal' ? '目標設定' :
+                                     standard.category === 'performance' ? '實際作為' : '供應鏈管理';
+                const categoryColor = standard.category === 'goal' ? '#3b82f6' :
+                                     standard.category === 'performance' ? '#22c55e' : '#f97316';
 
-                let dataHtml = dataFields.map(field => {
-                    const value = company[field];
-                    if (!value || value === '' || value === 'False') {
-                        return `— ${field} —`;
-                    }
-                    return `<span class="data-key">${field}:</span> ${value}`;
-                }).join('<br/>');
+                // Two-column layout for scores: left column (0,1) and right column (2,3)
+                let scoresHtml = `<div style="display: flex; gap: 10px;">`;
+                scoresHtml += `<div style="flex: 1;">`;
+                scoresHtml += `<div style="margin-bottom: 4px;"><span class="score-label score-0">0</span><span style="font-size: 10px;">${standard.scores[0]}</span></div>`;
+                scoresHtml += `<div style="margin-bottom: 4px;"><span class="score-label score-1">1</span><span style="font-size: 10px;">${standard.scores[1]}</span></div>`;
+                scoresHtml += `</div>`;
+                scoresHtml += `<div style="flex: 1;">`;
+                scoresHtml += `<div style="margin-bottom: 4px;"><span class="score-label score-2">2</span><span style="font-size: 10px;">${standard.scores[2]}</span></div>`;
+                scoresHtml += `<div><span class="score-label score-3">3</span><span style="font-size: 10px;">${standard.scores[3]}</span></div>`;
+                scoresHtml += `</div>`;
+                scoresHtml += `</div>`;
 
                 html += `
                     <tr>
-                        <td class="dimension-name-cell">${standard.displayName}</td>
-                        <td class="dimension-score-cell ${standard.category}">${score}</td>
-                        <td class="dimension-data-cell">${dataHtml}</td>
+                        <td style="font-weight: 500; color: #666; font-size: 11px; text-align: left; vertical-align: top; white-space: nowrap; padding: 6px 8px 6px 0;">
+                            <span style="display: inline-block; width: 10px; height: 10px; background-color: ${categoryColor}; margin-right: 4px; vertical-align: middle;"></span>${categoryLabel}
+                        </td>
+                        <td style="font-weight: 500; color: #1a1a1a; font-size: 11px; text-align: left; vertical-align: top; white-space: nowrap; padding: 6px 8px 6px 0;">${standard.displayName}</td>
+                        <td style="line-height: 1.5; text-align: left; vertical-align: top; padding: 6px 0;">${scoresHtml}</td>
                     </tr>
                 `;
             });
